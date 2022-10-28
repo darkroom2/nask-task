@@ -1,0 +1,13 @@
+GET http://127.0.0.1:8000/api/tasks?_id=1&foo
+Accept: application/json
+###
+GET http://127.0.0.1:8000/api/tasks?name=bar
+Accept: application/json
+###
+GET http://127.0.0.1:8000/api/tasks/1
+Accept: application/json
+###
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+###
