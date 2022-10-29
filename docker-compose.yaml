@@ -1,0 +1,29 @@
+services:
+  nask-task-app:
+    container_name: nask-task-app
+    build: nask_task_app/
+    image: nask-task-app-image
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  redis:
+    container_name: nask-task-redis
+    image: redis:7-alpine
+
+  rabbitmq:
+    container_name: nask-task-rabbit
+    image: rabbitmq:3-management-alpine
+
+  celery:
+    container_name: nask-task-celery
+    image: nask-task-app-image
+    command: celery -A app.main.celery worker -l info
+    depends_on:
+      - redis
+      - rabbitmq
+
+  flower:
+    container_name: nask-task-flower
+    image: nask-task-app-image
+    command: celery -A app.main.celery flower --port=5555
+    depends_on:
+      - celery
