@@ -1,7 +1,8 @@
 services:
   nask-task-app:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ./nask_task_app/app:/app
+      - ./nask_task_app/app:/code/app
     env_file:
       - .envs/.dev_docker
     ports:
@@ -10,13 +11,10 @@ services:
   redis:
     container_name: nask-task-redis
     image: redis:7-alpine
-    ports:
-      - 6379:6379
 
   rabbitmq:
     ports:
       - 15672:15672
-      - 5672:5672
     restart: always
 
   celery:
