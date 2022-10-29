@@ -34,13 +34,13 @@ class TaskList(BaseModel):
 
 
 database = {
-    1: TaskOut(id=1, type=TaskType.sleep, status="waiting",
+    1: TaskOut(id=1, type=TaskType.sleep, status="PENDING",
                notify_url="http://127.0.0.1:8000/",
                payload=TaskPayload(input=5)),
-    2: TaskOut(id=2, type=TaskType.prime, status="running",
+    2: TaskOut(id=2, type=TaskType.prime, status="STARTED",
                notify_url="http://127.0.0.1:8000/",
                payload=TaskPayload(input=10)),
-    3: TaskOut(id=3, type=TaskType.fibonacci, status="done",
+    3: TaskOut(id=3, type=TaskType.fibonacci, status="SUCCESS",
                notify_url="http://127.0.0.1:8000/",
                payload=TaskPayload(input=101))
 }

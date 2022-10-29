@@ -13,7 +13,7 @@ Features:
 * uses FastAPI
 * ready for k8s
 * uses Celery (task queue, long async tasks, returns results to the address specified in the request)
-* endpoint `/api/tasks` handles multiple inquiries to this address 
+* endpoint `/api/tasks` handles multiple inquiries to this address
 * Task status through API
 
 Endpoints:
@@ -29,7 +29,6 @@ Example requests:
 * Get all tasks in queue:
 
 ```http request
-###
 GET http://127.0.0.1:8000/api/tasks
 Accept: application/json
 ```
@@ -40,9 +39,7 @@ Accept: application/json
     {
       "id": 1,
       "type": "sleep",
-      "status": "waiting",
-      "percent_done": 0,
-      "queue_position": 42,
+      "status": "PENDING",
       "notify_url": "http://127.0.0.1:8000/",
       "payload": {
         "input": 5
@@ -51,9 +48,7 @@ Accept: application/json
     {
       "id": 2,
       "type": "prime",
-      "status": "running",
-      "percent_done": 42,
-      "queue_position": 0,
+      "status": "STARTED",
       "notify_url": "http://127.0.0.1:8000/",
       "payload": {
         "input": 10
@@ -62,9 +57,7 @@ Accept: application/json
     {
       "id": 3,
       "type": "fibonacci",
-      "status": "done",
-      "percent_done": 100,
-      "queue_position": 0,
+      "status": "SUCCESS",
       "notify_url": "http://127.0.0.1:8000/",
       "payload": {
         "input": 101
@@ -77,7 +70,6 @@ Accept: application/json
 * Get task status by id:
 
 ```http request
-###
 GET http://127.0.0.1:8000/api/tasks/1
 Accept: application/json
 ```
@@ -86,9 +78,7 @@ Accept: application/json
 {
   "id": 1,
   "type": "sleep",
-  "status": "waiting",
-  "percent_done": 0,
-  "queue_position": 42,
+  "status": "STARTED",
   "notify_url": "http://127.0.0.1:8000/",
   "payload": {
     "input": 5
@@ -99,7 +89,6 @@ Accept: application/json
 * Add task to queue:
 
 ```http request
-###
 POST http://127.0.0.1:8000/api/tasks
 Accept: application/json
 Content-Type: application/json
@@ -117,9 +106,7 @@ Content-Type: application/json
 {
   "id": 4,
   "type": "prime",
-  "status": "waiting",
-  "percent_done": 0,
-  "queue_position": 5,
+  "status": "PENDING",
   "notify_url": "http://127.0.0.1:8000/",
   "payload": {
     "input": 100
