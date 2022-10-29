@@ -7,6 +7,15 @@ A containerized FastAPI-based application that performs several types of long as
 The application provides API for adding tasks to the queue to be executed asynchronously and checking the status of the
 task. After each task is completed, the result is sent to the address specified in the request.
 
+Features:
+
+* Containerized app
+* uses FastAPI
+* ready for k8s
+* uses Celery (task queue, long async tasks, returns results to the address specified in the request)
+* endpoint `/api/tasks` handles multiple inquiries to this address 
+* Task status through API
+
 Endpoints:
 
 * `/api/tasks`
