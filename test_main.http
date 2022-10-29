@@ -1,13 +1,28 @@
-GET http://127.0.0.1:8000/api/tasks?_id=1&foo
-Accept: application/json
 ###
-GET http://127.0.0.1:8000/api/tasks?name=bar
+GET http://127.0.0.1:8000/
 Accept: application/json
+
+###
+GET http://127.0.0.1:8000/api/tasks
+Accept: application/json
+
 ###
 GET http://127.0.0.1:8000/api/tasks/1
 Accept: application/json
-###
 
-GET http://127.0.0.1:8000/
-Accept: application/json
 ###
+GET http://127.0.0.1:8000/api/tasks/4
+Accept: application/json
+
+###
+POST http://127.0.0.1:8000/api/tasks
+Accept: application/json
+Content-Type: application/json
+
+{
+  "type": "task1",
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "foo": "bar"
+  }
+}
