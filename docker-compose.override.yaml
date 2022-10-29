@@ -22,13 +22,13 @@ services:
 
   celery:
     volumes:
-      - ./nask_task_app/app:/app
+      - ./nask_task_app/app:/code/app
     env_file:
       - .envs/.dev_docker
 
   flower:
     volumes:
-      - ./nask_task_app/app:/app
+      - ./nask_task_app/app:/code/app
     env_file:
       - .envs/.dev_docker
     ports:
