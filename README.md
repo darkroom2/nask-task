@@ -2,6 +2,122 @@
 
 A containerized FastAPI-based application that performs several types of long asynchronous tasks.
 
+## Description
+
+The application provides API for adding tasks to the queue to be executed asynchronously and checking the status of the
+task. After each task is completed, the result is sent to the address specified in the request.
+
+Endpoints:
+
+* `/api/tasks`
+    * `POST` - add task to the queue
+    * `GET` - get all tasks
+* `/api/tasks/<id>`
+    * `GET` - get task status by id
+
+Example requests:
+
+* Get all tasks in queue:
+
+```http request
+###
+GET http://127.0.0.1:8000/api/tasks
+Accept: application/json
+```
+
+```json
+{
+  "tasks": [
+    {
+      "id": 1,
+      "type": "sleep",
+      "status": "waiting",
+      "percent_done": 0,
+      "queue_position": 42,
+      "notify_url": "http://127.0.0.1:8000/",
+      "payload": {
+        "input": 5
+      }
+    },
+    {
+      "id": 2,
+      "type": "prime",
+      "status": "running",
+      "percent_done": 42,
+      "queue_position": 0,
+      "notify_url": "http://127.0.0.1:8000/",
+      "payload": {
+        "input": 10
+      }
+    },
+    {
+      "id": 3,
+      "type": "fibonacci",
+      "status": "done",
+      "percent_done": 100,
+      "queue_position": 0,
+      "notify_url": "http://127.0.0.1:8000/",
+      "payload": {
+        "input": 101
+      }
+    }
+  ]
+}
+```
+
+* Get task status by id:
+
+```http request
+###
+GET http://127.0.0.1:8000/api/tasks/1
+Accept: application/json
+```
+
+```json
+{
+  "id": 1,
+  "type": "sleep",
+  "status": "waiting",
+  "percent_done": 0,
+  "queue_position": 42,
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "input": 5
+  }
+}
+```
+
+* Add task to queue:
+
+```http request
+###
+POST http://127.0.0.1:8000/api/tasks
+Accept: application/json
+Content-Type: application/json
+
+{
+  "type": "prime",
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "input": 100
+  }
+}
+```
+
+```json
+{
+  "id": 4,
+  "type": "prime",
+  "status": "waiting",
+  "percent_done": 0,
+  "queue_position": 5,
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "input": 100
+  }
+}
+```
+
 ## Requirements
 
 * python 3.10
@@ -23,6 +139,13 @@ Download images & run all containers:
 ```shell
 docker compose up
 ```
+
+Now you can access the application at http://localhost:8000.
+
+The docs for the API are available at http://localhost:8000/docs.
+
+There is also flower instance available at http://localhost:5555 and RabbitMQ Management interface
+at http://localhost:15672.
 
 ### Running with dependencies with Docker and application locally
 
@@ -81,36 +204,19 @@ uvicorn nask_task_app.app.main:app --reload --env-file .envs/.dev
 TODO:
 
 Scaling:
+
 * run one uvicorn process per container (or pod) - configure replication at the cluster level, with multiple containers
   and nginx to load balance between them
 * run multiple celery (autoscaling) workers per container (or pod) - configure replication at the cluster level and
   nginx to load balance between them (check if replicated uvicorn processes can share all the celery workers in all
   pods/containers)
 
-docker compose (celery autoscaling)
-run on cluster (k8s directory with config)
-poetry to resolve dependencies
-kubernetes init container (for nask-task)
+* Write api documentation or fill OpenAPI
+* run on cluster (k8s directory with config)
+* kubernetes init container (for nask-task)
+* use celery + redis
+* write some tests
 
-use celery + redis
-write some tests
-
-task = {task_id, task_type, task_status, task_precent_done}
-
-post request /api/tasks:(result_url, task_type, task_input) > if valid:({task}, queue_position) else:400
-get request /api/tasks:() > list({task_id, task_type, precent_done}, ..., {...})
-get request /api/tasks/<task_id> ({task})
-
-[]: # # Usage
-[]: # ## Docker
-[]: # ### Build
-[]: # ```bash
-[]: # docker build -t nask-task .
-[]: # ```
-[]: # ### Run
-[]: # ```bash
-[]: # docker run -p 8000:8000 nask-task
-[]: # ```
 []: # ## Kubernetes
 []: # ### Deploy
 []: # ```bash
@@ -120,40 +226,3 @@ get request /api/tasks/<task_id> ({task})
 []: # ```bash
 []: # kubectl delete -f k8s
 []: # ```
-[]: # ## Usage
-[]: # ### Post request
-[]: # ```bash
-[]: # curl -X POST http://localhost:8000/task -d '{"result_url": "http://localhost:8000/result", "task_type": "fibonacci"}'
-[]: # ```
-[]: # ### Get request
-[]: # ```bash
-[]: # curl -X GET http://localhost:8000/result
-[]: # ```
-[]: # ## Task types
-[]: # ### Fibonacci
-[]: # ```bash
-[]: # curl -X POST http://localhost:8000/task -d '{"result_url": "http://localhost:8000/result", "task_type": "fibonacci"}'
-[]: # ```
-[]: # ### Prime numbers
-[]: # ```bash
-[]: # curl -X POST http://localhost:8000/task -d '{"result_url": "http://localhost:8000/result", "task_type": "prime_numbers"}'
-[]: # ```
-[]: # ### Sleep
-[]: # ```bash
-[]: # curl -X POST http://localhost:8000/task -d '{"result_url": "http://localhost:8000/result", "task_type": "sleep"}'
-[]: # ```
-[]: # ## Result
-[]: # ```bash
-[]: # curl -X GET http://localhost:8000/result
-[]: # ```
-[]: # ## Result example
-[]: # ```json
-[]: # {
-[]: #   "result": "fibonacci",
-[]: #   "status": "done"
-[]: # }
-[]: # ```
-[]: # ## Result status
-[]: # ### Done
-[]: # ```json
-[]:
