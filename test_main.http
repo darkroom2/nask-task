@@ -20,9 +20,9 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "type": "task1",
+  "type": "prime",
   "notify_url": "http://127.0.0.1:8000/",
   "payload": {
-    "foo": "bar"
+    "input": 100
   }
 }

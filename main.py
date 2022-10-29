@@ -1,19 +1,19 @@
 from enum import Enum
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 
 
 class TaskType(str, Enum):
-    task1 = 'task1'
-    task2 = 'task2'
-    task3 = 'task3'
+    sleep = "sleep"
+    prime = "prime"
+    fibonacci = "fibonacci"
 
 
 class TaskStatus(str, Enum):
-    waiting = 'waiting'
-    running = 'running'
-    done = 'done'
+    waiting = "waiting"
+    running = "running"
+    done = "done"
 
 
 class TaskOut(BaseModel):
@@ -37,18 +37,18 @@ class TaskList(BaseModel):
 
 
 database = {
-    1: TaskOut(id=1, type=TaskType.task1, status=TaskStatus.waiting,
+    1: TaskOut(id=1, type=TaskType.sleep, status=TaskStatus.waiting,
                percent_done=0, queue_position=42,
-               notify_url='http://127.0.0.1:8000/', payload={'foo': 'bar'}),
-    2: TaskOut(id=2, type=TaskType.task2, status=TaskStatus.running,
+               notify_url="http://127.0.0.1:8000/", payload={"input": 5}),
+    2: TaskOut(id=2, type=TaskType.prime, status=TaskStatus.running,
                percent_done=42, queue_position=0,
-               notify_url='http://127.0.0.1:8000/', payload={'bar': 'baz'}),
-    3: TaskOut(id=3, type=TaskType.task3, status=TaskStatus.done,
+               notify_url="http://127.0.0.1:8000/", payload={"input": 10}),
+    3: TaskOut(id=3, type=TaskType.fibonacci, status=TaskStatus.done,
                percent_done=100, queue_position=0,
-               notify_url='http://127.0.0.1:8000/', payload={'baz': 'foo'})
+               notify_url="http://127.0.0.1:8000/", payload={"input": 101})
 }
 
-queue_length = 0
+task_queue = []
 
 app = FastAPI()
 
@@ -60,30 +60,44 @@ async def root():
 
 @app.get("/api/tasks/", response_model=TaskList)
 async def tasks_statuses():
-    return {'tasks': [task for task in database.values()]}
+    return {"tasks": [task for task in database.values()]}
 
 
 @app.get("/api/tasks/{_id}", response_model=TaskOut | None)
 async def task_status(_id: int):
     if _id in database:
         return database[_id]
+    raise HTTPException(
+        status_code=404,
+        detail=f"Task with id: {_id} not found"
+    )
 
 
-@app.post("/api/tasks/", response_model=TaskOut)
+@app.post("/api/tasks/", response_model=TaskOut, status_code=201)
 async def task_status(task_in: TaskIn):
     # Validate input
-    # Add task to queue
-    # Return task status
-    # Add something to monitor queue position or percent done
+    print(task_in.payload)
+    if not task_in.payload:
+        raise HTTPException(
+            status_code=422,
+            detail="Payload is empty"
+        )
 
     _id = len(database) + 1
+
+    # Add task to queue
     task_out = TaskOut(
         **task_in.dict(),
         id=_id,
         status=TaskStatus.waiting,
         percent_done=0,
-        queue_position=queue_length + 1
+        queue_position=len(task_queue),
     )
+    task_queue.append(task_out)
 
-    database[_id] = task_out  # Adding to db might raise an error
-    return database[_id]  # Read from db to assure that task was added
+    # Add task to database
+    database[_id] = task_out
+
+    # TODO: Add something to monitor queue position or percent done
+
+    return database[_id]
