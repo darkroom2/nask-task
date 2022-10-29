@@ -11,10 +11,13 @@ services:
   redis:
     container_name: nask-task-redis
     image: redis:7-alpine
+    ports:
+      - 6379:6379
 
   rabbitmq:
     ports:
       - 15672:15672
+      - 5672:5672
     restart: always
 
   celery:
