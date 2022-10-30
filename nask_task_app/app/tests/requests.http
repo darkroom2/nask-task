@@ -8,8 +8,10 @@ Accept: application/json
 Content-Type: application/json
 
 {
+  "id": 1,
   "type": "prime",
   "notify_url": "http://127.0.0.1:8000/",
+  "status": "PENDING",
   "payload": {
     "input": 101
   }
@@ -20,7 +22,7 @@ GET http://127.0.0.1:8000/api/tasks
 Accept: application/json
 
 ###
-GET http://127.0.0.1:8000/api/tasks/c940a8be-7977-47f4-8831-b78a0ba5b866
+GET http://127.0.0.1:8000/api/tasks/5b200284-6d2e-473e-b221-1b3469e08e70
 Accept: application/json
 
 ###

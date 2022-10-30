@@ -179,6 +179,11 @@ To install dependencies for `nask_task_app` run:
 pip install -r nask_task_app/requirements.txt
 ```
 
+To be able to run test, also install `dev` packages:
+```shell
+pip install -r nask_task_app/requirements-dev.txt
+```
+
 To run celery worker run:
 
 ```shell

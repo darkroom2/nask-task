@@ -26,8 +26,8 @@ class TaskIn(BaseModel):
 
 
 class TaskOut(TaskIn):  # TODO: remove extra fields in README.md
-    id: int | str | UUID
-    status: str
+    id: int | str | UUID | None
+    status: str | None
     result: int | bool | None
 
 
@@ -76,6 +76,7 @@ def notify_task(task_details: TaskOut) -> bool:
 @celery.task
 def sleep_task(task_details: TaskOut) -> int:
     import time
+    task_details.id = sleep_task.request.id
     seconds = task_details.payload.input
     time.sleep(seconds)
     notify_task.delay(task_details)
@@ -84,6 +85,7 @@ def sleep_task(task_details: TaskOut) -> int:
 
 @celery.task
 def prime_task(task_details: TaskOut) -> bool:
+    task_details.id = prime_task.request.id
     n = task_details.payload.input
     if n < 2:
         notify_task.delay(task_details)
@@ -103,6 +105,7 @@ def fibonacci_task(task_details: TaskOut) -> int:
             return n
         return fib(n - 1) + fib(n - 2)
 
+    task_details.id = fibonacci_task.request.id
     _n = task_details.payload.input
     result = fib(_n)
     notify_task.delay(task_details)
@@ -116,7 +119,12 @@ async def root():
 
 @app.post("/")
 async def notify(task_details: TaskOut):
-    print("Notify from task received: ", task_details)
+    if task_details.id in database:
+        database[task_details.id] = task_details
+        if not task_details.status == "SUCCESS":
+            return {"status": "task not finished"}
+        return {"status": "ok"}
+    raise HTTPException(status_code=404, detail="task not found")
 
 
 @app.get("/api/tasks/", response_model=TaskList)
@@ -125,7 +133,7 @@ async def tasks_statuses():
 
 
 @app.get("/api/tasks/{uuid}", response_model=TaskOut)
-async def task_status(uuid: int | str | UUID = Path(..., title="Task UUID")):
+async def task_status(uuid: int | str | UUID = Path(..., title="task UUID")):
     if uuid in database:
         task_details = database[uuid]
         try:
@@ -135,30 +143,25 @@ async def task_status(uuid: int | str | UUID = Path(..., title="Task UUID")):
             return task_details
         except Exception as e:
             raise HTTPException(status_code=500,
-                                detail=f"Error with task: {uuid}") from e
+                                detail=f"error with task: {uuid}") from e
     raise HTTPException(status_code=404,
-                        detail=f"Task with id: {uuid} not found")
+                        detail=f"task with id: {uuid} not found")
 
 
 @app.post("/api/tasks/", response_model=TaskOut, status_code=201)
 async def task_add(task_in: TaskIn):
-    # Retrieve input from payload
-    _input = task_in.payload.input
+    # Create task out object
+    task_out = TaskOut(
+        **task_in.dict()
+    )
 
     # Check task type and add to queue
     if task_in.type == TaskType.sleep:
-        task = sleep_task.delay(_input)
+        sleep_task.delay(task_out)
     elif task_in.type == TaskType.prime:
-        task = prime_task.delay(_input)
+        prime_task.delay(task_out)
     else:
-        task = fibonacci_task.delay(_input)
-
-    # Create task out object
-    task_out = TaskOut(
-        **task_in.dict(),
-        id=task.id,
-        status=task.status,
-    )
+        fibonacci_task.delay(task_out)
 
     # Add task to database
     database[task_out.id] = task_out
