@@ -110,7 +110,7 @@ class TestMain(TestCase):
                                         },
                                         "notify_url": "http://localhost:8000/"
                                     })
-        mock_sleep_task.assert_called_once_with((expected_task_detail,),
+        mock_sleep_task.assert_called_once_with((expected_task_detail, ),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())
@@ -138,7 +138,7 @@ class TestMain(TestCase):
                                         },
                                         "notify_url": "http://localhost:8000/"
                                     })
-        mock_sleep_task.assert_called_once_with((expected_task_detail,),
+        mock_sleep_task.assert_called_once_with((expected_task_detail, ),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())
@@ -166,7 +166,7 @@ class TestMain(TestCase):
                                         },
                                         "notify_url": "http://localhost:8000/"
                                     })
-        mock_sleep_task.assert_called_once_with((expected_task_detail,),
+        mock_sleep_task.assert_called_once_with((expected_task_detail, ),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())

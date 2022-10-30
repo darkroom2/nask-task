@@ -25,7 +25,7 @@ class TaskIn(BaseModel):
     payload: TaskPayload
 
 
-class TaskOut(TaskIn):  # TODO: remove extra fields in README.md
+class TaskOut(TaskIn):
     id: int | str | UUID | None
     status: str | None
     result: int | bool | None
@@ -147,7 +147,7 @@ async def task_add(task_in: TaskIn):
         task = prime_task
     else:
         task = fibonacci_task
-    task.apply_async((task_out.dict(),), task_id=task_out.id)
+    task.apply_async((task_out.dict(), ), task_id=task_out.id)
     # Add task to database
     database[task_out.id] = task_out
     # Return task
