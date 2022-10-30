@@ -16,13 +16,24 @@ Features:
 * endpoint `/api/tasks` handles multiple inquiries to this address
 * Task status through API
 
+TODO:
+
+* remove code TODOs
+* remove dotenv()
+* update README.md with proper requests and responses
+* write celery tests
+* make diagram
+* make description
+* try to add k8s deployment
+* add pylint, coverage, flake8 or autopep8 (and instructions)
+
 Endpoints:
 
 * `/api/tasks`
-    * `POST` - add task to the queue
-    * `GET` - get all tasks
+  * `POST` - add task to the queue
+  * `GET` - get all tasks
 * `/api/tasks/<id>`
-    * `GET` - get task status by id
+  * `GET` - get task status by id
 
 Example requests:
 
