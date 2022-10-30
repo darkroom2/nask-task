@@ -7,6 +7,27 @@ A containerized FastAPI-based application that performs several types of long as
 The application provides API for adding tasks to the queue to be executed asynchronously and checking the status of the
 task. After each task is completed, the result is sent to the address specified in the request.
 
+When the request for adding a task is received, the application creates a task object.
+
+The object is composed of parameters such as: unique UUID, task type, return address for results, task input data, task
+execution status, and task result. Such an object is then serialized into a database. Based on the task type, the
+corresponding task is called asynchronously and the object is passed to the queue. The queue uses RabbitMQ, which runs
+in a separate independent container, as a communication layer between the client and the worker. Tasks are taken off the
+queue by the worker service, which also runs in a separate container, and executed. In each task, a result notification
+task is called asynchronously before returning and storing the result in the worker database. In the notification task,
+the result of the parent task is retrieved and sent to the corresponding return address.
+
+This solution allows the application to be lightweight by not using polling. Each task is responsible for sending a
+result notification, which relieves the burden on the API serving application itself.
+
+The application provides the following types of tasks:
+
+* `fibonacci_task` - calculates the Fibonacci number for the given number
+* `sleep_task` - sleeps for the given number of seconds
+* `prime_task` - checks if the given number is prime
+
+There is possibility to view the status of the task and the result of its execution.
+
 Features:
 
 * containerized using Dockerfile and Docker Compose
@@ -15,22 +36,12 @@ Features:
 * endpoint `/api/tasks` handles multiple inquiries to this address
 * task status through API
 
-TODO:
+TODOs:
 
-* ready for k8s
-* make diagram
-* make description
-* try to add k8s deployment
-* Scaling
-* run one uvicorn process per container (or pod) - configure replication at the cluster level, with multiple containers
-  and nginx to load balance between them
-* run multiple celery (autoscaling) workers per container (or pod) - configure replication at the cluster level and
-  nginx to load balance between them (check if replicated uvicorn processes can share all the celery workers in all
-  pods/containers)
-* Write api documentation or fill OpenAPI
-* run on cluster (k8s directory with config)
-* kubernetes init container (for nask-task)
-* write some tests
+* add priority queue for notification tasks
+* Add k8s deployment (e.g. using Kompose)
+* Set scaling strategy
+* write Celery tests
 
 Endpoints:
 
@@ -218,7 +229,9 @@ Download images & run all containers:
 docker compose up
 ```
 
-Now you can access the application at http://localhost:8000.
+Now you can access the API at http://localhost:8000.
+
+Feel free to use example requests mentioned above or stored in [requests.http](nask_task_app/tests/requests.http)
 
 The docs for the API are available at http://localhost:8000/docs.
 
