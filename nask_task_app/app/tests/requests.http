@@ -32,7 +32,7 @@ Content-Type: application/json
 
 {
   "type": "prime",
-  "notify_url": "http://127.0.0.1:8000/",
+  "notify_url": "http://nask-task-app:8000/",
   "payload": {
     "input": 101
   }
@@ -44,8 +44,8 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "type": "fibonacci",
-  "notify_url": "http://127.0.0.1:8000/",
+  "type": "sleep",
+  "notify_url": "http://nask-task-app:8000/",
   "payload": {
     "input": 20
   }

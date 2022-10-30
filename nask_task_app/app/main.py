@@ -6,7 +6,8 @@ from celery import Celery
 from celery.result import AsyncResult
 from dotenv import load_dotenv  # TODO: remove
 from fastapi import FastAPI, HTTPException, Path
-from pydantic import BaseModel, HttpUrl
+from kombu import uuid
+from pydantic import BaseModel, AnyHttpUrl
 
 
 class TaskType(str, Enum):
@@ -21,7 +22,7 @@ class TaskPayload(BaseModel):
 
 class TaskIn(BaseModel):
     type: TaskType
-    notify_url: HttpUrl
+    notify_url: AnyHttpUrl
     payload: TaskPayload
 
 
@@ -35,17 +36,7 @@ class TaskList(BaseModel):
     tasks: list[TaskOut]
 
 
-database = {
-    1: TaskOut(id=1, type=TaskType.sleep, status="PENDING",
-               notify_url="http://127.0.0.1:8000/",
-               payload=TaskPayload(input=5)),
-    2: TaskOut(id=2, type=TaskType.prime, status="STARTED",
-               notify_url="http://127.0.0.1:8000/",
-               payload=TaskPayload(input=10)),
-    3: TaskOut(id=3, type=TaskType.fibonacci, status="SUCCESS",
-               notify_url="http://127.0.0.1:8000/",
-               payload=TaskPayload(input=101))
-}
+database = {}
 
 app = FastAPI()
 
@@ -59,34 +50,34 @@ celery = Celery(
 
 
 @celery.task
-def notify_task(task_details: TaskOut) -> bool:
+def notify_task(task_details: dict) -> dict:
     import requests
-    task_result = AsyncResult(task_details.id).get()
-    task_details.status = task_result.status
-    task_details.result = task_result.result
+    task_result = AsyncResult(task_details["id"])
+    while not task_result.ready():
+        continue
+    task_details["status"] = task_result.status
+    task_details["result"] = task_result.result
     try:
         connect_timeout, read_timeout = 5.0, 30.0
-        requests.post(task_details.notify_url, json=task_details,
-                      timeout=(connect_timeout, read_timeout))
+        response = requests.post(task_details["notify_url"], json=task_details,
+                                 timeout=(connect_timeout, read_timeout))
     except requests.RequestException:
-        return False
-    return True
+        return {"status": "error", "message": "notify failed"}
+    return response.json()
 
 
 @celery.task
-def sleep_task(task_details: TaskOut) -> int:
+def sleep_task(task_details: dict) -> int:
     import time
-    task_details.id = sleep_task.request.id
-    seconds = task_details.payload.input
+    seconds = task_details["payload"]["input"]
     time.sleep(seconds)
     notify_task.delay(task_details)
     return seconds
 
 
 @celery.task
-def prime_task(task_details: TaskOut) -> bool:
-    task_details.id = prime_task.request.id
-    n = task_details.payload.input
+def prime_task(task_details: dict) -> bool:
+    n = task_details["payload"]["input"]
     if n < 2:
         notify_task.delay(task_details)
         return False
@@ -99,14 +90,13 @@ def prime_task(task_details: TaskOut) -> bool:
 
 
 @celery.task
-def fibonacci_task(task_details: TaskOut) -> int:
+def fibonacci_task(task_details: dict) -> int:
     def fib(n: int) -> int:
         if n <= 1:
             return n
         return fib(n - 1) + fib(n - 2)
 
-    task_details.id = fibonacci_task.request.id
-    _n = task_details.payload.input
+    _n = task_details["payload"]["input"]
     result = fib(_n)
     notify_task.delay(task_details)
     return result
@@ -118,7 +108,7 @@ async def root():
 
 
 @app.post("/")
-async def notify(task_details: TaskOut):
+async def root_notify(task_details: TaskOut):
     if task_details.id in database:
         database[task_details.id] = task_details
         if not task_details.status == "SUCCESS":
@@ -140,8 +130,9 @@ async def task_status(uuid: int | str | UUID = Path(..., title="task UUID")):
             task_result = AsyncResult(task_details.id)
             task_details.status = task_result.status
             task_details.result = task_result.result
+            database[uuid] = task_details
             return task_details
-        except Exception as e:
+        except ValueError as e:
             raise HTTPException(status_code=500,
                                 detail=f"error with task: {uuid}") from e
     raise HTTPException(status_code=404,
@@ -152,19 +143,18 @@ async def task_status(uuid: int | str | UUID = Path(..., title="task UUID")):
 async def task_add(task_in: TaskIn):
     # Create task out object
     task_out = TaskOut(
-        **task_in.dict()
+        **task_in.dict(),
+        id=uuid()
     )
-
     # Check task type and add to queue
     if task_in.type == TaskType.sleep:
-        sleep_task.delay(task_out)
+        task = sleep_task
     elif task_in.type == TaskType.prime:
-        prime_task.delay(task_out)
+        task = prime_task
     else:
-        fibonacci_task.delay(task_out)
-
+        task = fibonacci_task
+    task.apply_async((task_out.dict(),), task_id=task_out.id)
     # Add task to database
     database[task_out.id] = task_out
-
     # Return task
     return task_out
