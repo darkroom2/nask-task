@@ -49,7 +49,7 @@ def notify_task(task_details: dict) -> dict:
     import requests
     task_result = AsyncResult(task_details["id"])
     while not task_result.ready():
-        continue
+        task_result.wait(1)
     task_details["status"] = task_result.status
     task_details["result"] = task_result.result
     try:
