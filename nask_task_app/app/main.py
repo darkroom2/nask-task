@@ -3,8 +3,9 @@ from os import environ, getcwd  # TODO: remove cwd
 from uuid import UUID
 
 from celery import Celery
+from celery.result import AsyncResult
 from dotenv import load_dotenv  # TODO: remove
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel, HttpUrl
 
 
@@ -27,6 +28,7 @@ class TaskIn(BaseModel):
 class TaskOut(TaskIn):  # TODO: remove extra fields in README.md
     id: int | str | UUID
     status: str
+    result: int | bool | None
 
 
 class TaskList(BaseModel):
@@ -57,27 +59,54 @@ celery = Celery(
 
 
 @celery.task
-def sleep_task(seconds):
-    import time
-    time.sleep(seconds)
-    return seconds
-
-
-@celery.task
-def prime_task(n):
-    if n < 2:
+def notify_task(task_details: TaskOut) -> bool:
+    import requests
+    task_result = AsyncResult(task_details.id).get()
+    task_details.status = task_result.status
+    task_details.result = task_result.result
+    try:
+        connect_timeout, read_timeout = 5.0, 30.0
+        requests.post(task_details.notify_url, json=task_details,
+                      timeout=(connect_timeout, read_timeout))
+    except requests.RequestException:
         return False
-    for i in range(2, n):
-        if n % i == 0:
-            return False
     return True
 
 
 @celery.task
-def fibonacci_task(n):
-    if n <= 1:
-        return n
-    return fibonacci_task(n - 1) + fibonacci_task(n - 2)
+def sleep_task(task_details: TaskOut) -> int:
+    import time
+    seconds = task_details.payload.input
+    time.sleep(seconds)
+    notify_task.delay(task_details)
+    return seconds
+
+
+@celery.task
+def prime_task(task_details: TaskOut) -> bool:
+    n = task_details.payload.input
+    if n < 2:
+        notify_task.delay(task_details)
+        return False
+    for i in range(2, n):
+        if n % i == 0:
+            notify_task.delay(task_details)
+            return False
+    notify_task.delay(task_details)
+    return True
+
+
+@celery.task
+def fibonacci_task(task_details: TaskOut) -> int:
+    def fib(n: int) -> int:
+        if n <= 1:
+            return n
+        return fib(n - 1) + fib(n - 2)
+
+    _n = task_details.payload.input
+    result = fib(_n)
+    notify_task.delay(task_details)
+    return result
 
 
 @app.get("/")
@@ -85,23 +114,34 @@ async def root():
     return {"task": "nask"}
 
 
+@app.post("/")
+async def notify(task_details: TaskOut):
+    print("Notify from task received: ", task_details)
+
+
 @app.get("/api/tasks/", response_model=TaskList)
 async def tasks_statuses():
     return {"tasks": [task for task in database.values()]}
 
 
-@app.get("/api/tasks/{_id}", response_model=TaskOut | None)
-async def task_status(_id: int):
-    if _id in database:
-        return database[_id]
-    raise HTTPException(
-        status_code=404,
-        detail=f"Task with id: {_id} not found"
-    )
+@app.get("/api/tasks/{uuid}", response_model=TaskOut)
+async def task_status(uuid: int | str | UUID = Path(..., title="Task UUID")):
+    if uuid in database:
+        task_details = database[uuid]
+        try:
+            task_result = AsyncResult(task_details.id)
+            task_details.status = task_result.status
+            task_details.result = task_result.result
+            return task_details
+        except Exception as e:
+            raise HTTPException(status_code=500,
+                                detail=f"Error with task: {uuid}") from e
+    raise HTTPException(status_code=404,
+                        detail=f"Task with id: {uuid} not found")
 
 
 @app.post("/api/tasks/", response_model=TaskOut, status_code=201)
-async def task_status(task_in: TaskIn):
+async def task_add(task_in: TaskIn):
     # Retrieve input from payload
     _input = task_in.payload.input
 
@@ -112,9 +152,6 @@ async def task_status(task_in: TaskIn):
         task = prime_task.delay(_input)
     else:
         task = fibonacci_task.delay(_input)
-
-    # TODO: Add something to monitor queue position or percent done
-    #  Figure out how to store the AsyncResponse returned by Celery task
 
     # Create task out object
     task_out = TaskOut(

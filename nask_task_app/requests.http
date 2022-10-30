@@ -3,15 +3,24 @@ GET http://127.0.0.1:8000/
 Accept: application/json
 
 ###
+POST http://127.0.0.1:8000/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "type": "prime",
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "input": 101
+  }
+}
+
+###
 GET http://127.0.0.1:8000/api/tasks
 Accept: application/json
 
 ###
-GET http://127.0.0.1:8000/api/tasks/1
-Accept: application/json
-
-###
-GET http://127.0.0.1:8000/api/tasks/4
+GET http://127.0.0.1:8000/api/tasks/c940a8be-7977-47f4-8831-b78a0ba5b866
 Accept: application/json
 
 ###
@@ -23,6 +32,19 @@ Content-Type: application/json
   "type": "prime",
   "notify_url": "http://127.0.0.1:8000/",
   "payload": {
-    "input": 100
+    "input": 101
+  }
+}
+
+###
+POST http://127.0.0.1:8000/api/tasks
+Accept: application/json
+Content-Type: application/json
+
+{
+  "type": "fibonacci",
+  "notify_url": "http://127.0.0.1:8000/",
+  "payload": {
+    "input": 20
   }
 }
