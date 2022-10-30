@@ -90,7 +90,6 @@ def prime_task(task_details: dict) -> bool:
 
 @celery.task
 def fibonacci_task(task_details: dict) -> int:
-
     def fib(n: int) -> int:
         if n <= 1:
             return n
@@ -122,21 +121,21 @@ async def tasks_statuses():
     return {"tasks": [task for task in database.values()]}
 
 
-@app.get("/api/tasks/{uuid}", response_model=TaskOut)
-async def task_status(uuid: int | str | UUID = Path(..., title="task UUID")):
-    if uuid in database:
-        task_details = database[uuid]
+@app.get("/api/tasks/{_uuid}", response_model=TaskOut)
+async def task_status(_uuid: int | str | UUID = Path(..., title="task UUID")):
+    if _uuid in database:
+        task_details = database[_uuid]
         try:
             task_result = AsyncResult(task_details.id)
             task_details.status = task_result.status
             task_details.result = task_result.result
-            database[uuid] = task_details
+            database[_uuid] = task_details
             return task_details
         except ValueError as e:
             raise HTTPException(status_code=500,
-                                detail=f"error with task: {uuid}") from e
+                                detail=f"error with task: {_uuid}") from e
     raise HTTPException(status_code=404,
-                        detail=f"task with id: {uuid} not found")
+                        detail=f"task with id: {_uuid} not found")
 
 
 @app.post("/api/tasks/", response_model=TaskOut, status_code=201)
