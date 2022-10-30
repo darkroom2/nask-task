@@ -7,6 +7,7 @@ from nask_task_app.app.main import app, database, TaskOut
 
 
 class MockAsyncResult:
+
     def __init__(self, _id):
         if _id == "TaskGoneInCeleryBackend":
             raise ValueError
@@ -43,7 +44,9 @@ class TestMain(TestCase):
         valid_task = {
             "id": 1,
             "type": "sleep",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": "PENDING"
@@ -57,7 +60,9 @@ class TestMain(TestCase):
         valid_task = {
             "id": 1,
             "type": "sleep",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": "PENDING"
@@ -70,7 +75,9 @@ class TestMain(TestCase):
         valid_task = {
             "id": 1,
             "type": "sleep",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": 5,
             "status": "SUCCESS"
@@ -88,16 +95,21 @@ class TestMain(TestCase):
         expected_task_detail = {
             "id": "some_uuid",
             "type": "sleep",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": None
         }
-        response = self.client.post("/api/tasks/", json={
-            "type": "sleep",
-            "payload": {"input": 5},
-            "notify_url": "http://localhost:8000/"
-        })
+        response = self.client.post("/api/tasks/",
+                                    json={
+                                        "type": "sleep",
+                                        "payload": {
+                                            "input": 5
+                                        },
+                                        "notify_url": "http://localhost:8000/"
+                                    })
         mock_sleep_task.assert_called_once_with((expected_task_detail,),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
@@ -111,16 +123,21 @@ class TestMain(TestCase):
         expected_task_detail = {
             "id": "some_uuid",
             "type": "prime",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": None
         }
-        response = self.client.post("/api/tasks/", json={
-            "type": "prime",
-            "payload": {"input": 5},
-            "notify_url": "http://localhost:8000/"
-        })
+        response = self.client.post("/api/tasks/",
+                                    json={
+                                        "type": "prime",
+                                        "payload": {
+                                            "input": 5
+                                        },
+                                        "notify_url": "http://localhost:8000/"
+                                    })
         mock_sleep_task.assert_called_once_with((expected_task_detail,),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
@@ -134,27 +151,35 @@ class TestMain(TestCase):
         expected_task_detail = {
             "id": "some_uuid",
             "type": "fibonacci",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": None
         }
-        response = self.client.post("/api/tasks/", json={
-            "type": "fibonacci",
-            "payload": {"input": 5},
-            "notify_url": "http://localhost:8000/"
-        })
+        response = self.client.post("/api/tasks/",
+                                    json={
+                                        "type": "fibonacci",
+                                        "payload": {
+                                            "input": 5
+                                        },
+                                        "notify_url": "http://localhost:8000/"
+                                    })
         mock_sleep_task.assert_called_once_with((expected_task_detail,),
                                                 task_id="some_uuid")
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())
 
     def test_task_add_invalid(self):
-        response = self.client.post("/api/tasks/", json={
-            "type": "workout",
-            "payload": {"input": "deadlift"},
-            "notify_url": "http://localhost:8000/"
-        })
+        response = self.client.post("/api/tasks/",
+                                    json={
+                                        "type": "workout",
+                                        "payload": {
+                                            "input": "deadlift"
+                                        },
+                                        "notify_url": "http://localhost:8000/"
+                                    })
         self.assertEqual(422, response.status_code)
 
     def test_get_task_statuses_empty(self):
@@ -166,7 +191,9 @@ class TestMain(TestCase):
         database["some_uuid"] = {
             "id": "some_uuid",
             "type": "sleep",
-            "payload": {"input": 5},
+            "payload": {
+                "input": 5
+            },
             "notify_url": "http://localhost:8000/",
             "result": None,
             "status": None
@@ -179,14 +206,12 @@ class TestMain(TestCase):
     @patch("nask_task_app.app.main.AsyncResult",
            Mock(side_effect=MockAsyncResult))
     def test_get_task_status_detail_valid(self):
-        database["some_uuid"] = TaskOut(
-            id="some_uuid",
-            type="sleep",
-            payload={"input": 5},
-            notify_url="http://localhost:8000/",
-            result=None,
-            status=None
-        )
+        database["some_uuid"] = TaskOut(id="some_uuid",
+                                        type="sleep",
+                                        payload={"input": 5},
+                                        notify_url="http://localhost:8000/",
+                                        result=None,
+                                        status=None)
         response = self.client.get("/api/tasks/some_uuid")
         # database update should happen after calling the endpoint
         expected_task_detail = database["some_uuid"]
@@ -202,14 +227,12 @@ class TestMain(TestCase):
             payload={"input": 5},
             notify_url="http://localhost:8000/",
             result=None,
-            status=None
-        )
+            status=None)
         response = self.client.get("/api/tasks/TaskGoneInCeleryBackend")
         self.assertEqual(500, response.status_code)
         self.assertDictEqual(
             {"detail": "error with task: TaskGoneInCeleryBackend"},
-            response.json()
-        )
+            response.json())
 
     def test_get_task_status_detail_not_found(self):
         response = self.client.get("/api/tasks/some_uuid")

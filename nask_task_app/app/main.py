@@ -11,9 +11,9 @@ from pydantic import BaseModel, AnyHttpUrl
 
 
 class TaskType(str, Enum):
-    sleep = "sleep"
-    prime = "prime"
-    fibonacci = "fibonacci"
+    SLEEP = "sleep"
+    PRIME = "prime"
+    FIBONACCI = "fibonacci"
 
 
 class TaskPayload(BaseModel):
@@ -42,11 +42,9 @@ app = FastAPI()
 
 load_dotenv(getcwd() + '/.envs/.dev')  # TODO: remove
 
-celery = Celery(
-    __name__,
-    broker=environ.get("CELERY_BROKER_URL"),
-    backend=environ.get("CELERY_BACKEND_URL")
-)
+celery = Celery(__name__,
+                broker=environ.get("CELERY_BROKER_URL"),
+                backend=environ.get("CELERY_BACKEND_URL"))
 
 
 @celery.task
@@ -59,7 +57,8 @@ def notify_task(task_details: dict) -> dict:
     task_details["result"] = task_result.result
     try:
         connect_timeout, read_timeout = 5.0, 30.0
-        response = requests.post(task_details["notify_url"], json=task_details,
+        response = requests.post(task_details["notify_url"],
+                                 json=task_details,
                                  timeout=(connect_timeout, read_timeout))
     except requests.RequestException:
         return {"status": "error", "message": "notify failed"}
@@ -91,6 +90,7 @@ def prime_task(task_details: dict) -> bool:
 
 @celery.task
 def fibonacci_task(task_details: dict) -> int:
+
     def fib(n: int) -> int:
         if n <= 1:
             return n
@@ -142,14 +142,11 @@ async def task_status(uuid: int | str | UUID = Path(..., title="task UUID")):
 @app.post("/api/tasks/", response_model=TaskOut, status_code=201)
 async def task_add(task_in: TaskIn):
     # Create task out object
-    task_out = TaskOut(
-        **task_in.dict(),
-        id=uuid()
-    )
+    task_out = TaskOut(**task_in.dict(), id=uuid())
     # Check task type and add to queue
-    if task_in.type == TaskType.sleep:
+    if task_in.type == TaskType.SLEEP:
         task = sleep_task
-    elif task_in.type == TaskType.prime:
+    elif task_in.type == TaskType.PRIME:
         task = prime_task
     else:
         task = fibonacci_task
