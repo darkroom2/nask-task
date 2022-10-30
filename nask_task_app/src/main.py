@@ -1,10 +1,9 @@
 from enum import Enum
-from os import environ, getcwd  # TODO: remove cwd
+from os import environ
 from uuid import UUID
 
 from celery import Celery
 from celery.result import AsyncResult
-from dotenv import load_dotenv  # TODO: remove
 from fastapi import FastAPI, HTTPException, Path
 from kombu import uuid
 from pydantic import BaseModel, AnyHttpUrl
@@ -39,8 +38,6 @@ class TaskList(BaseModel):
 database = {}
 
 app = FastAPI()
-
-load_dotenv(getcwd() + '/.envs/.dev')  # TODO: remove
 
 celery = Celery(__name__,
                 broker=environ.get("CELERY_BROKER_URL"),
@@ -90,6 +87,7 @@ def prime_task(task_details: dict) -> bool:
 
 @celery.task
 def fibonacci_task(task_details: dict) -> int:
+
     def fib(n: int) -> int:
         if n <= 1:
             return n

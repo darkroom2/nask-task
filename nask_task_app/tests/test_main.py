@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock
 
 from fastapi.testclient import TestClient
 
-from nask_task_app.app.main import app, database, TaskOut
+from nask_task_app.src.main import TaskOut, app, database
 
 
 class MockAsyncResult:
@@ -87,8 +87,8 @@ class TestMain(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertDictEqual({"status": "ok"}, response.json())
 
-    @patch("nask_task_app.app.main.uuid")
-    @patch("nask_task_app.app.main.sleep_task.apply_async")
+    @patch("nask_task_app.src.main.uuid")
+    @patch("nask_task_app.src.main.sleep_task.apply_async")
     def test_task_add_valid_sleep(self, mock_sleep_task, mock_uuid):
         mock_uuid.return_value = "some_uuid"
         mock_sleep_task.return_value = None
@@ -115,8 +115,8 @@ class TestMain(TestCase):
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())
 
-    @patch("nask_task_app.app.main.uuid")
-    @patch("nask_task_app.app.main.prime_task.apply_async")
+    @patch("nask_task_app.src.main.uuid")
+    @patch("nask_task_app.src.main.prime_task.apply_async")
     def test_task_add_valid_prime(self, mock_sleep_task, mock_uuid):
         mock_uuid.return_value = "some_uuid"
         mock_sleep_task.return_value = None
@@ -143,8 +143,8 @@ class TestMain(TestCase):
         self.assertEqual(201, response.status_code)
         self.assertDictEqual(expected_task_detail, response.json())
 
-    @patch("nask_task_app.app.main.uuid")
-    @patch("nask_task_app.app.main.fibonacci_task.apply_async")
+    @patch("nask_task_app.src.main.uuid")
+    @patch("nask_task_app.src.main.fibonacci_task.apply_async")
     def test_task_add_valid_fibonacci(self, mock_sleep_task, mock_uuid):
         mock_uuid.return_value = "some_uuid"
         mock_sleep_task.return_value = None
@@ -203,7 +203,7 @@ class TestMain(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertDictEqual(expected_task_statuses, response.json())
 
-    @patch("nask_task_app.app.main.AsyncResult",
+    @patch("nask_task_app.src.main.AsyncResult",
            Mock(side_effect=MockAsyncResult))
     def test_get_task_status_detail_valid(self):
         database["some_uuid"] = TaskOut(id="some_uuid",
@@ -218,7 +218,7 @@ class TestMain(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertDictEqual(expected_task_detail.dict(), response.json())
 
-    @patch("nask_task_app.app.main.AsyncResult",
+    @patch("nask_task_app.src.main.AsyncResult",
            Mock(side_effect=MockAsyncResult))
     def test_get_task_status_detail_valid_celery_error(self):
         database["TaskGoneInCeleryBackend"] = TaskOut(

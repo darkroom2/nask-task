@@ -199,19 +199,19 @@ pip install -r nask_task_app/requirements-dev.txt
 To run celery worker run:
 
 ```shell
-celery -A nask_task_app.app.main.celery worker -l info
+celery -A nask_task_app.src.main.celery worker -l info
 ```
 
 To run flower (celery monitoring tool) run:
 
 ```shell
-celery -A nask_task_app.app.main.celery flower
+celery -A nask_task_app.src.main.celery flower
 ```
 
 To run `nask_task_app` run:
 
 ```shell
-uvicorn nask_task_app.app.main:app --reload --env-file .envs/.dev 
+uvicorn nask_task_app.src.main:app --reload --env-file .envs/.dev 
 ```
 
 TODO:

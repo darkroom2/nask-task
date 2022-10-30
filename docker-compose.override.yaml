@@ -1,8 +1,8 @@
 services:
   nask-task-app:
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ./nask_task_app/app:/code/app
+      - ./nask_task_app/src:/code/src
     env_file:
       - .envs/.dev_docker
     ports:
@@ -22,13 +22,13 @@ services:
 
   celery:
     volumes:
-      - ./nask_task_app/app:/code/app
+      - ./nask_task_app/src:/code/src
     env_file:
       - .envs/.dev_docker
 
   flower:
     volumes:
-      - ./nask_task_app/app:/code/app
+      - ./nask_task_app/src:/code/src
     env_file:
       - .envs/.dev_docker
     ports:
